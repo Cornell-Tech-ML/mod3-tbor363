@@ -285,17 +285,17 @@ class Tensor:
 
     @property
     def dims(self) -> int:
-        """
-        Returns:
-            int : dimensionality of the tensor
+        """Returns
+        int : dimensionality of the tensor
+
         """
         return self._tensor.dims
 
     @property
     def size(self) -> int:
-        """
-        Returns:
-            int : size of the tensor
+        """Returns
+        int : size of the tensor
+
         """
         return self._tensor.size
 
@@ -349,7 +349,7 @@ class Tensor:
         return Exp.apply(self)
 
     def sum(self, dim: Optional[int] = None) -> Tensor:
-        "Compute the sum over dimension 'dim'"
+        """Compute the sum over dimension 'dim'"""
         if dim is None:
             return Sum.apply(
                 self.contiguous().view(int(self.size)), self._ensure_tensor(0)
@@ -358,22 +358,20 @@ class Tensor:
             return Sum.apply(self, self._ensure_tensor(dim))
 
     def mean(self, dim: Optional[int] = None) -> Tensor:
-        "Compute the mean over dimension 'dim'"
+        """Compute the mean over dimension 'dim'"""
         if dim is not None:
             return self.sum(dim) / int(self.shape[dim])
         else:
             return self.sum() / int(self.size)
 
     def permute(self, *order: int) -> Tensor:
-        "Permute tensor dimensions to *order"
+        """Permute tensor dimensions to *order"""
         return Permute.apply(self, tensor(list(order)))
 
     def view(self, *shape: int) -> Tensor:
-        "Change the shape of the tensor to a new shape with the same size"
+        """Change the shape of the tensor to a new shape with the same size"""
         return View.apply(self, tensor(list(shape)))
 
     def zero_grad_(self) -> None:
-        """
-        Reset the derivative on this variable
-        """
+        """Reset the derivative on this variable"""
         self.grad = None

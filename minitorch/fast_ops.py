@@ -169,7 +169,6 @@ def tensor_map(
         in_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        # raise NotImplementedError("Need to implement for Task 3.1")
         # check if strides of out and in_storage are aligned
         strides_aligned = np.array_equal(out_strides, in_strides) and np.array_equal(
             out_shape, in_shape
@@ -179,10 +178,11 @@ def tensor_map(
             for i in prange(len(out)):
                 out[i] = fn(in_storage[i])
         else:
-            out_index: Index = np.empty(MAX_DIMS, np.int32)
-            in_index: Index = np.empty(MAX_DIMS, np.int32)
+
             # run loop in parallel
             for i in prange(len(out)):
+                out_index: Index = np.zeros(MAX_DIMS, np.int32)
+                in_index: Index = np.zeros(MAX_DIMS, np.int32)
                 to_index(i, out_shape, out_index)
                 broadcast_index(out_index, out_shape, in_shape, in_index)
                 o = index_to_position(out_index, out_strides)
@@ -227,21 +227,21 @@ def tensor_zip(
         b_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        # raise NotImplementedError("Need to implement for Task 3.1")
-        out_index: Index = np.zeros(MAX_DIMS, np.int32)
-        a_index: Index = np.zeros(MAX_DIMS, np.int32)
-        b_index: Index = np.zeros(MAX_DIMS, np.int32)
 
-        if (
+        strides_aligned = (
             np.array_equal(out_strides, b_strides)
             and np.array_equal(out_strides, a_strides)
             and np.array_equal(out_shape, a_shape)
             and np.array_equal(out_shape, b_shape)
-        ):
+        )
+        if strides_aligned:
             for i in prange(len(out)):
                 out[i] = fn(a_storage[i], b_storage[i])
         else:
             for i in prange(len(out)):
+                out_index: Index = np.zeros(MAX_DIMS, np.int32)
+                a_index: Index = np.zeros(MAX_DIMS, np.int32)
+                b_index: Index = np.zeros(MAX_DIMS, np.int32)
                 to_index(i, out_shape, out_index)
                 o = index_to_position(out_index, out_strides)
                 broadcast_index(out_index, out_shape, a_shape, a_index)
@@ -284,10 +284,10 @@ def tensor_reduce(
         reduce_dim: int,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        # raise NotImplementedError("Need to implement for Task 3.1")
-        out_index: Index = np.zeros(MAX_DIMS, np.int32)
+
         reduce_size = a_shape[reduce_dim]
         for i in prange(len(out)):
+            out_index: Index = np.zeros(MAX_DIMS, np.int32)
             to_index(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
             for s in range(reduce_size):
@@ -346,7 +346,28 @@ def _tensor_matrix_multiply(
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
     # TODO: Implement for Task 3.2.
-    raise NotImplementedError("Need to implement for Task 3.2")
+    assert a_shape[-1] == b_shape[-2]
+
+    for batch in prange(len(out)):
+        out_0 = batch // (out_shape[-1] * out_shape[-2])
+        out_1 = batch % out_shape[-1] * out_shape[-2] // out_shape[-1]
+        out_2 = batch % out_shape[-1]
+
+        out_batch = (
+            out_0 * out_strides[0] + out_1 * out_strides[1] + out_2 * out_strides[2]
+        )
+
+        a_start = out_0 * a_batch_stride + out_1 * a_strides[1]
+        b_start = out_0 * b_batch_stride + out_1 * a_strides[2]
+
+        c = 0
+        for i in range(a_shape[-1]):
+            c += (
+                a_storage[a_start + i * a_strides[2]]
+                * b_storage[b_start + i * a_strides[1]]
+            )
+
+        out[out_batch] = c
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)

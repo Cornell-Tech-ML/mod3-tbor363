@@ -358,8 +358,8 @@ def _tensor_matrix_multiply(
     b_batches = np.prod(b_shape[:batch_dims])
 
     for batch in prange(out_batches):
-        a_batch = (batch + 1) // a_batches
-        b_batch = (batch + 1) // b_batches
+        a_batch = batch % a_batches
+        b_batch = batch % b_batches
 
         # need position in storage for this batch
         a_batch_i = a_batch * a_batch_stride

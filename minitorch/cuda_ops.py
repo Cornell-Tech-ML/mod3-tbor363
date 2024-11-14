@@ -348,7 +348,7 @@ def tensor_reduce(
         stride = 1
         while stride < BLOCK_DIM:
             if pos % (stride * 2) == 0:
-                cache[pos] = fn(cache[pos], cahce[pos + stride])
+                cache[pos] = fn(cache[pos], cache[pos + stride])
             stride *= 2
             cuda.syncthreads()
 

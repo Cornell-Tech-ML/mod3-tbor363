@@ -263,7 +263,26 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     pos = cuda.threadIdx.x
 
     # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+
+    # load data into shared mem
+    # each thread loads element from a into cache
+    if i < size:
+        cahce[pos] = a[i]
+    else:
+        cahce[pos] = 0
+
+    # sync all threads
+    cuda.syncthreads()
+    # parallel sum
+    stride = 1
+    while stride < BLOCK_DIM:
+        if pos % (stride * 2) == 0:
+            cache[pos] += cahce[pos + stride]
+        stride *= 2
+        cuda.syncthreads()
+
+    if pos == 0:
+        out[cuda.blockIdx.x] = cache[0]
 
 
 jit_sum_practice = cuda.jit()(_sum_practice)
@@ -314,7 +333,29 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError("Need to implement for Task 3.3")
+        to_index(out_pos, out_shape, out_index)
+        # initialize cache with starting value
+        cache[pos] = reduce_value
+
+        for s in range(pos, a_shape[reduce_dim], BLOCK_DIM):
+            for d in range(len(out_shape)):
+                a_index[d] = out_index[d]
+            a_index[reduce_dim] = s
+
+            j = index_to_position(a_index, a_strides)
+            cache[pos] = fn(cache[pos], a_storage[j])
+
+        cuda.syncthreads()
+        i = BLOCK_DIM // 2
+        while i > 0:
+            if pos < i:
+                cache[pos] = fn(cahce[pos], cache[pos + i])
+            cuda.syncthreads()
+            i //= 2
+
+        if pos == 0:
+            o = index_to_position(out_index, out_strides)
+            out[o] = cahce[0]
 
     return jit(_reduce)  # type: ignore
 

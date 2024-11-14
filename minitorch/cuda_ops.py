@@ -350,7 +350,7 @@ def tensor_reduce(
             if pos % (stride * 2) == 0:
                 cahce[pos] = fn(cache[pos], cahce[pos + stride])
             stride *= 2
-            cuda.synthreads()
+            cuda.syncthreads()
 
         if pos == 0:
             out[o] = cache[pos]

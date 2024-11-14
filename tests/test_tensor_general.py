@@ -377,4 +377,8 @@ def test_bmm(backend: str, data: DataObject) -> None:
         .sum(2)
         .view(D, A, C)
     )
+
+    # import ipdb
+
+    # ipdb.set_trace()
     assert_close_tensor(c, c2)

@@ -348,26 +348,34 @@ def _tensor_matrix_multiply(
     # TODO: Implement for Task 3.2.
     assert a_shape[-1] == b_shape[-2]
 
-    for batch in prange(len(out)):
-        out_0 = batch // (out_shape[-1] * out_shape[-2])
-        out_1 = batch % out_shape[-1] * out_shape[-2] // out_shape[-1]
-        out_2 = batch % out_shape[-1]
+    # get all the dims for the batch
+    batch_dims = len(out_shape) - 2
+    m, k = a_shape[-2], a_shape[-1]
+    n = b_shape[-1]
 
-        out_batch = (
-            out_0 * out_strides[0] + out_1 * out_strides[1] + out_2 * out_strides[2]
-        )
+    out_batches = np.prod(out_shape[:batch_dims])
+    a_batches = np.prod(a_shape[:batch_dims])
+    b_batches = np.prod(b_shape[:batch_dims])
 
-        a_start = out_0 * a_batch_stride + out_1 * a_strides[1]
-        b_start = out_0 * b_batch_stride + out_1 * a_strides[2]
+    for batch in prange(out_batches):
+        a_batch = (batch + 1) // a_batches
+        b_batch = (batch + 1) // b_batches
 
-        c = 0
-        for i in range(a_shape[-1]):
-            c += (
-                a_storage[a_start + i * a_strides[2]]
-                * b_storage[b_start + i * a_strides[1]]
-            )
+        # need position in storage for this batch
+        a_batch_i = a_batch * a_batch_stride
+        b_batch_i = b_batch * b_batch_stride
+        out_batch_i = batch * out_strides[0]
+        # 2D matrix multiply
+        for i in range(m):
+            for j in range(n):
+                c = 0
+                for p in range(k):
+                    a_idx = a_batch_i + i * a_strides[-2] + p * a_strides[-1]
+                    b_idx = b_batch_i + p * b_strides[-2] + j * b_strides[-1]
 
-        out[out_batch] = c
+                    c += a_storage[a_idx] * b_storage[b_idx]
+                out_idx = out_batch_i + i * out_strides[-2] + j * out_strides[-1]
+                out[out_idx] = c
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)

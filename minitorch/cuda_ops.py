@@ -396,21 +396,21 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     # i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     pos_x = cuda.threadIdx.x
     pos_y = cuda.threadIdx.y
-    i = pos_y * size + pos_x
+    i = pos_x * size + pos_y
 
     # load data into shared mem
     if pos_x < size and pos_y < size:
-        cache_a[pos_y, pos_x] = a[i]
-        cache_b[pos_y, pos_x] = b[i]
+        cache_a[pos_x, pos_y] = a[i]
+        cache_b[pos_x, pos_y] = b[i]
     else:
-        cache_a[pos_y, pos_x] = 0
-        cache_b[pos_y, pos_x] = 0
+        cache_a[pos_x, pos_y] = 0
+        cache_b[pos_x, pos_y] = 0
 
     cuda.syncthreads()
 
     c = 0
     for k in range(size):
-        c += cache_a[pos_y, k] * cache_b[k, pos_x]
+        c += cache_a[pos_x, k] * cache_b[k, pos_y]
 
     if pos_x < size and pos_y < size:
         out[i] = c

@@ -357,25 +357,65 @@ def _tensor_matrix_multiply(
     a_batches = np.prod(a_shape[:batch_dims])
     b_batches = np.prod(b_shape[:batch_dims])
 
-    for batch in prange(out_batches):
+    # loop through all of the elemnts of out
+    for i in prange(len(out)):
+        # get which batch its in -> to index for just batch
+        # batch = i // out_batches
+        # a_batch = batch % a_batches
+        # b_batch = batch % b_batches
+
+        # row = (i % out_batches) // out_strides[-2]
+        # col = ((i % out_batches) % out_strides[-2]) // out_strides[-1]
+
+        # col = i % out_shape[-1]
+        # row = (i // out_shape[-1]) % out_shape[-2]
+        # batch = ((i // out_shape[-2]) // out_shape[-2]) % out_batches
+
+        batch = i // (out_shape[-1] * out_shape[-2])
+        row = i % (out_shape[-1] * out_shape[-2]) // out_shape[-1]
+        col = i % out_shape[-1]
+
         a_batch = batch % a_batches
         b_batch = batch % b_batches
-
-        # need position in storage for this batch
+        # out index -> i
+        # start batch storage position for a and b
         a_batch_i = a_batch * a_batch_stride
         b_batch_i = b_batch * b_batch_stride
-        out_batch_i = batch * out_strides[0]
-        # 2D matrix multiply
-        for i in range(m):
-            for j in range(n):
-                c = 0
-                for p in range(k):
-                    a_idx = a_batch_i + i * a_strides[-2] + p * a_strides[-1]
-                    b_idx = b_batch_i + p * b_strides[-2] + j * b_strides[-1]
 
-                    c += a_storage[a_idx] * b_storage[b_idx]
-                out_idx = out_batch_i + i * out_strides[-2] + j * out_strides[-1]
-                out[out_idx] = c
+        a_row_i = a_batch_i + row * a_strides[-2]
+        b_col_i = b_batch_i + col * b_strides[-1]
+
+        # perform dot_product
+        c = 0
+        for p in range(k):
+            a = a_storage[a_row_i + p * a_strides[-1]]
+            b = b_storage[b_col_i + p * b_strides[-2]]
+            c += a * b
+        # out_i = batch * out_strides[0] + row * out_strides[-2] + col * out_strides[-1]
+        out[i] = c
+
+        # get start of the row and col
+
+    # for batch in prange(out_batches):
+    #     a_batch = batch % a_batches
+    #     b_batch = batch % b_batches
+
+    #     # need position in storage for this batch
+    #     a_batch_i = a_batch * a_batch_stride
+    #     b_batch_i = b_batch * b_batch_stride
+    #     out_batch_i = batch * out_strides[0]
+
+    #     # 2D matrix multiply
+    #     for i in range(m):
+    #         for j in range(n):
+    #             c = 0
+    #             for p in range(k):
+    #                 a_idx = a_batch_i + i * a_strides[-2] + p * a_strides[-1]
+    #                 b_idx = b_batch_i + p * b_strides[-2] + j * b_strides[-1]
+
+    #                 c += a_storage[a_idx] * b_storage[b_idx]
+    #             out_idx = out_batch_i + i * out_strides[-2] + j * out_strides[-1]
+    #             out[out_idx] = c
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)

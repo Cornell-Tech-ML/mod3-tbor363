@@ -94,7 +94,8 @@ class CudaOps(TensorOps):
             out_shape[dim] = (a.shape[dim] - 1) // 1024 + 1
             out_a = a.zeros(tuple(out_shape))
 
-            threadsperblock = 1024
+            # threadsperblock = 1024
+            threadsperblock = 512  # RTX 2070
             blockspergrid = out_a.size
             f[blockspergrid, threadsperblock](  # type: ignore
                 *out_a.tuple(), out_a.size, *a.tuple(), dim, start
@@ -326,7 +327,8 @@ def tensor_reduce(
         reduce_dim: int,
         reduce_value: float,
     ) -> None:
-        BLOCK_DIM = 1024
+        # BLOCK_DIM = 1024
+        BLOCK_DIM = 512  # My RTX 2070
         cache = cuda.shared.array(BLOCK_DIM, numba.float64)
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         out_pos = cuda.blockIdx.x
@@ -404,42 +406,42 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
 
     c = 0
 
-    for tile in range(0, size, BLOCK_DIM):
-        if j < size and (tile + pi) < size:
-            a_shared[pj, pi] = a[j * size + (tile + pi)]
-        else:
-            a_shared[pj, pi] = 0
+    # for tile in range(0, size, BLOCK_DIM):
+    #     if j < size and (tile + pi) < size:
+    #         a_shared[pj, pi] = a[j * size + (tile + pi)]
+    #     else:
+    #         a_shared[pj, pi] = 0
 
-        if (tile + pj) < size and i < size:
-            b_shared[pj, pi] = b[(tile + pj) * size + i]
-        else:
-            b_shared[pj, pi] = 0
+    #     if (tile + pj) < size and i < size:
+    #         b_shared[pj, pi] = b[(tile + pj) * size + i]
+    #     else:
+    #         b_shared[pj, pi] = 0
 
-        cuda.syncthreads()
+    #     cuda.syncthreads()
 
-        for k in range(min(BLOCK_DIM, size - tile)):
-            c += a_shared[pj, k] * b_shared[k, pi]
+    #     for k in range(min(BLOCK_DIM, size - tile)):
+    #         c += a_shared[pj, k] * b_shared[k, pi]
 
-        cuda.syncthreads()
-
-    if j < size and i < size:
-        out[j * size + i] = c
-    # if j < size and i < size:
-    #     a_shared[pj, pi] = a[j * size + i]
-    #     b_shared[pj, pi] = b[j * size + i]
-    # else:
-    #     a_shared[pj, pi] = 0
-    #     b_shared[pj, pi] = 0
-
-    # cuda.syncthreads()
-
-    # c = 0
-    # for k in range(size):
-    #     c += a_shared[pj, k] * b_shared[k, pi]
-    # cuda.syncthreads()
+    #     cuda.syncthreads()
 
     # if j < size and i < size:
     #     out[j * size + i] = c
+    if j < size and i < size:
+        a_shared[pj, pi] = a[j * size + i]
+        b_shared[pj, pi] = b[j * size + i]
+    else:
+        a_shared[pj, pi] = 0
+        b_shared[pj, pi] = 0
+
+    cuda.syncthreads()
+
+    c = 0
+    for k in range(size):
+        c += a_shared[pj, k] * b_shared[k, pi]
+    cuda.syncthreads()
+
+    if j < size and i < size:
+        out[j * size + i] = c
 
 
 jit_mm_practice = jit(_mm_practice)

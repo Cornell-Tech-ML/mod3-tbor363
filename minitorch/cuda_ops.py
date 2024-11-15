@@ -401,22 +401,45 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
 
     # load data into shared mem
-    if j < size and i < size:
-        a_shared[pj, pi] = a[j * size + i]
-        b_shared[pj, pi] = b[j * size + i]
-    else:
-        a_shared[pj, pi] = 0
-        b_shared[pj, pi] = 0
-
-    cuda.syncthreads()
 
     c = 0
-    for k in range(size):
-        c += a_shared[pj, k] * b_shared[k, pi]
-    cuda.syncthreads()
+
+    for tile in range(0, size, BLOCK_DIM):
+        if j < size and (tile + pi) < size:
+            a_shared[pj, pi] = a[j * size + (tile + pi)]
+        else:
+            a_shared[pj, pi] = 0
+
+        if (tile + pj) < size and i < size:
+            b_shared[pj, pi] = b[(tile + pj) * size + i]
+        else:
+            b_shared[pj, pi] = 0
+
+        cuda.syncthreads()
+
+        for k in range(min(BLOCK_DIM, size - tile)):
+            c += a_shared[pj, k] * b_shared[k, pi]
+
+        cuda.syncthreads()
 
     if j < size and i < size:
         out[j * size + i] = c
+    # if j < size and i < size:
+    #     a_shared[pj, pi] = a[j * size + i]
+    #     b_shared[pj, pi] = b[j * size + i]
+    # else:
+    #     a_shared[pj, pi] = 0
+    #     b_shared[pj, pi] = 0
+
+    # cuda.syncthreads()
+
+    # c = 0
+    # for k in range(size):
+    #     c += a_shared[pj, k] * b_shared[k, pi]
+    # cuda.syncthreads()
+
+    # if j < size and i < size:
+    #     out[j * size + i] = c
 
 
 jit_mm_practice = jit(_mm_practice)
@@ -506,7 +529,7 @@ def _tensor_matrix_multiply(
         # compute dot product for position c[i,j]
         c = 0
         for m in range(BLOCK_DIM):
-            c += a_shared[pj, m] + b_shared[m, pi]
+            c += a_shared[pj, m] * b_shared[m, pi]
         cuda.syncthreads()
 
     if j < out_shape[-2] and i < out_shape[-2]:

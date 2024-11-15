@@ -401,7 +401,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
 
     # load data into shared mem
-    if ix < size and iy < size:
+    if i < size and i < size:
         a_shared[pi, pj] = a[i * size + j]
         b_shared[pi, pj] = b[i * size + j]
     else:

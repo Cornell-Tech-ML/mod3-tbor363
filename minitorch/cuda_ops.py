@@ -413,7 +413,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     c = 0
     for k in range(size):
         c += a_shared[pj, k] * b_shared[k, pi]
-        cuda.syncthreads()
+    cuda.syncthreads()
 
     if j < size and i < size:
         out[j * size + i] = c
@@ -489,14 +489,14 @@ def _tensor_matrix_multiply(
     # move across shared dimension by block dim
     for k in range(a_shape[-1], BLOCK_DIM):
         # load date into a
-        if j < a_shape[-2] and i < a_shape[-1]:
+        if j < a_shape[-2] and (k + pi) < a_shape[-1]:
             a_i = batch * a_batch_stride + j * a_strides[-2] + (k + pi) * a_strides[-1]
             a_shared[pj, pi] = a_storage[a_i]
         else:
             a_shared[pj, pi] = 0
 
         # load data into b
-        if j < b_shape[-2] and i < b_shape[-1]:
+        if (k + pj) < b_shape[-2] and i < b_shape[-1]:
             b_i = batch * b_batch_stride + (k + pj) * b_strides[-2] + i * b_strides[-1]
             b_shared[pj, pi] = b_storage[b_i]
         else:

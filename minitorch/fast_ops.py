@@ -391,7 +391,6 @@ def _tensor_matrix_multiply(
             a = a_storage[a_row_i + p * a_strides[-1]]
             b = b_storage[b_col_i + p * b_strides[-2]]
             c += a * b
-        # out_i = batch * out_strides[0] + row * out_strides[-2] + col * out_strides[-1]
         out[i] = c
 
         # get start of the row and col

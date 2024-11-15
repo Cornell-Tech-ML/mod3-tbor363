@@ -413,6 +413,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     c = 0
     for k in range(size):
         c += cache_a[pos_y, k] * cache_b[k, pos_x]
+        cuda.syncthreads()
 
     if pos_x < size and pos_y < size:
         out[iy * size + ix] = c

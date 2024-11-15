@@ -489,28 +489,28 @@ def _tensor_matrix_multiply(
     # move across shared dimension by block dim
     for k in range(a_shape[-1], BLOCK_DIM):
         # load date into a
-        if i < a_shape[-2] and j < a_shape[-1]:
-            a_i = batch * a_batch_stride + i * a_strides[-2] + (k + pj) * a_strides[-1]
-            a_shared[pi, pj] = a_storage[a_i]
+        if j < a_shape[-2] and i < a_shape[-1]:
+            a_i = batch * a_batch_stride + j * a_strides[-2] + (k + pi) * a_strides[-1]
+            a_shared[pj, pi] = a_storage[a_i]
         else:
-            a_shared[pi, pj] = 0
+            a_shared[pj, pi] = 0
 
         # load data into b
-        if i < b_shape[-2] and j < b_shape[-1]:
-            b_i = batch * b_batch_stride + (k + pi) * b_strides[-2] + j * b_strides[-1]
-            b_shared[pi, pj] = b_storage[b_i]
+        if j < b_shape[-2] and i < b_shape[-1]:
+            b_i = batch * b_batch_stride + (k + pj) * b_strides[-2] + i * b_strides[-1]
+            b_shared[pj, pi] = b_storage[b_i]
         else:
-            b_shared[pi, pj] = 0
+            b_shared[pj, pi] = 0
         cuda.syncthreads()
 
         # compute dot product for position c[i,j]
         c = 0
         for m in range(BLOCK_DIM):
-            c += a_shared[pi, m] + b_shared[m, pj]
+            c += a_shared[pj, m] + b_shared[m, pi]
         cuda.syncthreads()
 
-    if i < out_shape[-2] and j < out_shape[-2]:
-        out_i = batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]
+    if j < out_shape[-2] and i < out_shape[-2]:
+        out_i = batch * out_strides[0] + j * out_strides[-2] + i * out_strides[-1]
         out[out_i] = c
 
 

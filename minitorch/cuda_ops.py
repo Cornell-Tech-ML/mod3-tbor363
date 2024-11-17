@@ -417,11 +417,10 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         cuda.syncthreads()
 
         for k in range(BLOCK_DIM):
-            c += a_shared[txm k] + b_shared[k, ty]
+            c += a_shared[tx, k] + b_shared[k, ty]
         cuda.syncthreads()
     if row < size and col < size:
         out[row * size + col] = c
-
 
     # if j < size and i < size:
     #     a_shared[pj, pi] = a[j * size + i]

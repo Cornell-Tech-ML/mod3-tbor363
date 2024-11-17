@@ -391,7 +391,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         size (int): size of the square
 
     """
-    BLOCK_DIM = 32
+    BLOCK_DIM = 16
     # TODO: Implement for Task 3.3.
     a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
@@ -405,39 +405,23 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     # load data into shared mem
 
     c = 0
-    for m in range((size + BLOCK_DIM - 1) // BLOCK_DIM):
-        if row < size and (m * BLOCK_DIM + ty) < size:
-            a_shared[tx, ty] = a[row * size + (m * BLOCK_DIM + ty)]
-        else:
-            a_shared[tx, ty] = 0.0
-        if col < size and (m * BLOCK_DIM + tx) < size:
-            b_shared[tx, ty] = b[(m * BLOCK_DIM + tx) * size + col]
-        else:
-            b_shared[tx, ty] = 0.0
-        cuda.syncthreads()
 
-        for k in range(BLOCK_DIM):
-            c += a_shared[tx, k] + b_shared[k, ty]
-        cuda.syncthreads()
-    if row < size and col < size:
-        out[row * size + col] = c
+    if j < size and i < size:
+        a_shared[pj, pi] = a[j * size + i]
+        b_shared[pj, pi] = b[j * size + i]
+    else:
+        a_shared[pj, pi] = 0
+        b_shared[pj, pi] = 0
 
-    # if j < size and i < size:
-    #     a_shared[pj, pi] = a[j * size + i]
-    #     b_shared[pj, pi] = b[j * size + i]
-    # else:
-    #     a_shared[pj, pi] = 0
-    #     b_shared[pj, pi] = 0
+    cuda.syncthreads()
 
+    c = 0
+    for k in range(size):
+        c += a_shared[pj, k] * b_shared[k, pi]
     # cuda.syncthreads()
 
-    # c = 0
-    # for k in range(size):
-    #     c += a_shared[pj, k] * b_shared[k, pi]
-    # # cuda.syncthreads()
-
-    # if j < size and i < size:
-    #     out[j * size + i] = c
+    if j < size and i < size:
+        out[j * size + i] = c
 
 
 jit_mm_practice = jit(_mm_practice)

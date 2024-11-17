@@ -327,8 +327,8 @@ def tensor_reduce(
         reduce_dim: int,
         reduce_value: float,
     ) -> None:
-        # BLOCK_DIM = 1024
-        BLOCK_DIM = 512  # My RTX 2070
+        BLOCK_DIM = 1024
+        # BLOCK_DIM = 512  # My RTX 2070
         cache = cuda.shared.array(BLOCK_DIM, numba.float64)
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         out_pos = cuda.blockIdx.x
@@ -438,7 +438,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     c = 0
     for k in range(size):
         c += a_shared[pj, k] * b_shared[k, pi]
-    cuda.syncthreads()
+    # cuda.syncthreads()
 
     if j < size and i < size:
         out[j * size + i] = c

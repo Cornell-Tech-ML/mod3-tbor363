@@ -393,32 +393,14 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     """
     BLOCK_DIM = 32
     # TODO: Implement for Task 3.3.
-    return NotImplementedError
     a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     # i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     i = cuda.threadIdx.x
     j = cuda.threadIdx.y
     # i = pos_y * size + pos_x
-    pi = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
-    pj = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
 
     # load data into shared mem
-
-    # if j < size and i < size:
-    #     a_shared[pj, pi] = a[j * size + i]
-    #     b_shared[pj, pi] = b[j * size + i]
-    # else:
-    #     a_shared[pj, pi] = 0
-    #     b_shared[pj, pi] = 0
-
-    # cuda.syncthreads()
-
-    # c = 0
-    # for k in range(size):
-    #     c += a_shared[pj, k] * b_shared[k, pi]
-    # cuda.syncthreads()
-
     if j < size and i < size:
         a_shared[i, j] = a[i * size + j]
         b_shared[i, j] = b[i * size + j]
@@ -503,27 +485,26 @@ def _tensor_matrix_multiply(
     # TODO: Implement for Task 3.4.
 
     # move across shared dimension by block dim
-    for k in range(a_shape[-1], BLOCK_DIM):
+    for m in range(a_shape[-1], BLOCK_DIM):
         # load date into a
-        if j < a_shape[-2] and (k + pi) < a_shape[-1]:
-            a_i = batch * a_batch_stride + j * a_strides[-2] + (k + pi) * a_strides[-1]
-            a_shared[pj, pi] = a_storage[a_i]
+        if i < a_shape[-2] and (m + pj) < a_shape[-1]:
+            a_i = batch * a_batch_stride + i * a_strides[-2] + (m + pj) * a_strides[-1]
+            a_shared[pi, pj] = a_storage[a_i]
         else:
-            a_shared[pj, pi] = 0
+            a_shared[pi, pj] = 0
 
         # load data into b
-        if (k + pj) < b_shape[-2] and i < b_shape[-1]:
-            b_i = batch * b_batch_stride + (k + pj) * b_strides[-2] + i * b_strides[-1]
-            b_shared[pj, pi] = b_storage[b_i]
+        if (m + pi) < b_shape[-2] and j < b_shape[-1]:
+            b_i = batch * b_batch_stride + (m + pi) * b_strides[-2] + j * b_strides[-1]
+            b_shared[pi, pj] = b_storage[b_i]
         else:
-            b_shared[pj, pi] = 0
+            b_shared[pi, pj] = 0
         cuda.syncthreads()
 
         # compute dot product for position c[i,j]
         c = 0
-        for m in range(BLOCK_DIM):
-            c += a_shared[pj, m] * b_shared[m, pi]
-        cuda.syncthreads()
+        for k in range(BLOCK_DIM):
+            c += a_shared[pi, k] * b_shared[k, pj]
 
     if j < out_shape[-2] and i < out_shape[-2]:
         out_i = batch * out_strides[0] + j * out_strides[-2] + i * out_strides[-1]

@@ -404,21 +404,32 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
 
     # load data into shared mem
 
-    c = 0
+    # if j < size and i < size:
+    #     a_shared[pj, pi] = a[j * size + i]
+    #     b_shared[pj, pi] = b[j * size + i]
+    # else:
+    #     a_shared[pj, pi] = 0
+    #     b_shared[pj, pi] = 0
+
+    # cuda.syncthreads()
+
+    # c = 0
+    # for k in range(size):
+    #     c += a_shared[pj, k] * b_shared[k, pi]
+    # cuda.syncthreads()
 
     if j < size and i < size:
-        a_shared[pj, pi] = a[j * size + i]
-        b_shared[pj, pi] = b[j * size + i]
+        a_shared[j, i] = a[pj, i]
+        b_shared[j, i] = b[pj, i]
     else:
-        a_shared[pj, pi] = 0
-        b_shared[pj, pi] = 0
+        a_shared[j, i] = 0
+        b_shared[j, i] = 0
 
     cuda.syncthreads()
 
-    c = 0
+    c = 0.0
     for k in range(size):
-        c += a_shared[pj, k] * b_shared[k, pi]
-        # cuda.syncthreads()
+        c += a_shared[j, k] * b_shared[k, i]
 
     if j < size and i < size:
         # out[j * size + i] = c

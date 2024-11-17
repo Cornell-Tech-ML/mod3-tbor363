@@ -391,7 +391,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         size (int): size of the square
 
     """
-    BLOCK_DIM = 32
+    BLOCK_DIM = 16
     # TODO: Implement for Task 3.3.
     a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)

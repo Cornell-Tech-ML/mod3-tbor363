@@ -484,10 +484,10 @@ def _tensor_matrix_multiply(
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
     c = 0
-    batch_dims = len(out_shape) - 2
-    out_batches = 1
-    for dim in range(batch_dims):
-        out_batches *= out_shape[dim]
+    # batch_dims = len(out_shape) - 2
+    # out_batches = 1
+    # for dim in range(batch_dims):
+    #     out_batches *= out_shape[dim]
     # move across shared dimension by block dim
     for m in range(0, a_shape[-1], BLOCK_DIM):
         # load date into a
@@ -511,7 +511,7 @@ def _tensor_matrix_multiply(
             c += a_shared[pi, k] * b_shared[k, pj]
 
     if i < out_shape[-2] and j < out_shape[-1]:
-        out_i = batch * out_batches + i * out_strides[-2] + j * out_strides[-1]
+        out_i = batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]
         out[out_i] = c
 
 

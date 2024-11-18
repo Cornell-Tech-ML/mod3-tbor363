@@ -483,7 +483,7 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
-
+    c = 0
     # move across shared dimension by block dim
     for m in range(0, a_shape[-1], BLOCK_DIM):
         # load date into a
@@ -502,11 +502,11 @@ def _tensor_matrix_multiply(
         cuda.syncthreads()
 
         # compute dot product for position c[i,j]
-        c = 0
+
         for k in range(BLOCK_DIM):
             c += a_shared[pi, k] * b_shared[k, pj]
 
-    if j < out_shape[-2] and i < out_shape[-2]:
+    if i < out_shape[-2] and j < out_shape[-1]:
         out_i = batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]
         out[out_i] = c
 

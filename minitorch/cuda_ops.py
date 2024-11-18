@@ -485,7 +485,9 @@ def _tensor_matrix_multiply(
     # TODO: Implement for Task 3.4.
     c = 0
     batch_dims = len(out_shape) - 2
-    out_batches = np.prod(out_shape[:batch_dims])
+    out_batches = 1
+    for dim in range(batch_dims):
+        out_batches *= out_shape[dim]
     # move across shared dimension by block dim
     for m in range(0, a_shape[-1], BLOCK_DIM):
         # load date into a

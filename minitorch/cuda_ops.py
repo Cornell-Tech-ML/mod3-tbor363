@@ -487,15 +487,15 @@ def _tensor_matrix_multiply(
     # move across shared dimension by block dim
     for m in range(a_shape[-1], BLOCK_DIM):
         # load date into a
-        if i < a_shape[-2] and (m + pj) < a_shape[-1]:
-            a_i = batch * a_batch_stride + i * a_strides[-2] + (m + pj) * a_strides[-1]
+        if i < a_shape[-2] and (m + j) < a_shape[-1]:
+            a_i = batch * a_batch_stride + i * a_strides[-2] + (m + j) * a_strides[-1]
             a_shared[pi, pj] = a_storage[a_i]
         else:
             a_shared[pi, pj] = 0
 
         # load data into b
-        if (m + pi) < b_shape[-2] and j < b_shape[-1]:
-            b_i = batch * b_batch_stride + (m + pi) * b_strides[-2] + j * b_strides[-1]
+        if (m + i) < b_shape[-2] and j < b_shape[-1]:
+            b_i = batch * b_batch_stride + (m + i) * b_strides[-2] + j * b_strides[-1]
             b_shared[pi, pj] = b_storage[b_i]
         else:
             b_shared[pi, pj] = 0

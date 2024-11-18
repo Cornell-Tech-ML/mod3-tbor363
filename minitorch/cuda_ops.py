@@ -507,7 +507,7 @@ def _tensor_matrix_multiply(
             c += a_shared[pi, k] * b_shared[k, pj]
 
     if j < out_shape[-2] and i < out_shape[-2]:
-        out_i = batch * out_strides[0] + j * out_strides[-2] + i * out_strides[-1]
+        out_i = batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]
         out[out_i] = c
 
 

@@ -483,23 +483,31 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
-    c = 0
-    # batch_dims = len(out_shape) - 2
-    # out_batches = 1
-    # for dim in range(batch_dims):
-    #     out_batches *= out_shape[dim]
-    # move across shared dimension by block dim
-    for m in range(0, a_shape[-1], BLOCK_DIM):
+    c = 0.0
+    # update batches
+    a_batch = batch if a_shape[0] > 1 else 0
+    b_batch = batch if b_shape[0] > 1 else 0
+
+    num_tiles = (a_shape[-1] + BLOCK_DIM - 1) // BLOCK_DIM
+    for m in range(num_tiles):
         # load date into a
-        if i < a_shape[-2] and (m + pj) < a_shape[-1]:
-            a_i = batch * a_batch_stride + i * a_strides[-2] + (m + pj) * a_strides[-1]
+        if i < a_shape[-2] and (m * BLOCK_DIM + pj) < a_shape[-1]:
+            a_i = (
+                batch * a_batch_stride
+                + i * a_strides[-2]
+                + (m * BLOCK_DIM + pj) * a_strides[-1]
+            )
             a_shared[pi, pj] = a_storage[a_i]
         else:
             a_shared[pi, pj] = 0
 
         # load data into b
-        if (m + pi) < b_shape[-2] and j < b_shape[-1]:
-            b_i = batch * b_batch_stride + (m + pi) * b_strides[-2] + j * b_strides[-1]
+        if (m * BLOCK_DIM + pi) < b_shape[-2] and j < b_shape[-1]:
+            b_i = (
+                batch * b_batch_stride
+                + (m * BLOCK_DIM + pi) * b_strides[-2]
+                + j * b_strides[-1]
+            )
             b_shared[pi, pj] = b_storage[b_i]
         else:
             b_shared[pi, pj] = 0

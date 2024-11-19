@@ -488,15 +488,14 @@ def _tensor_matrix_multiply(
     a_batch = batch if a_shape[0] > 1 else 0
     b_batch = batch if b_shape[0] > 1 else 0
 
-    num_tiles = (a_shape[-1] * BLOCK_DIM) // BLOCK_DIM
+    # num_tiles = (a_shape[-1] * BLOCK_DIM) // BLOCK_DIM
     # num_tiles =
-    for m in range(num_tiles):
+    for m in range(0, a_shape[-1], BLOCK_DIM):
+
         # load date into a
-        if i < a_shape[-2] and (m * BLOCK_DIM + pj) < a_shape[-1]:
+        if i < a_shape[-2] and (m + pj) < a_shape[-1]:
             a_i = (
-                a_batch * a_batch_stride
-                + i * a_strides[-2]
-                + (m * BLOCK_DIM + pj) * a_strides[-1]
+                a_batch * a_batch_stride + i * a_strides[-2] + (m + pj) * a_strides[-1]
             )
             # a_index = cuda.local.array(MAX_DIMS, numba.int32)
             # a_index[0] = a_batch
@@ -509,12 +508,8 @@ def _tensor_matrix_multiply(
             a_shared[pi, pj] = 0
 
         # load data into b
-        if (m * BLOCK_DIM + pi) < b_shape[-2] and j < b_shape[-1]:
-            b_i = (
-                b_batch * b_batch_stride
-                + (m * BLOCK_DIM + pi) * b_strides[-2]
-                + j * b_strides[-1]
-            )
+        if (m + pi) < b_shape[-2] and j < b_shape[-1]:
+            b_i = b_batch * b_batch_stride + j * b_strides[-1]
             # b_index = cuda.local.array(MAX_DIMS, numba.int32)
             # b_index[0] = b_batch
             # b_index[1] = m * BLOCK_DIM + pi
@@ -527,9 +522,9 @@ def _tensor_matrix_multiply(
         cuda.syncthreads()
 
         # compute dot product for position c[i,j]
-
         for k in range(BLOCK_DIM):
-            c += a_shared[pi, k] * b_shared[k, pj]
+            if (k + m) < a_shape[-1]:
+                c += a_shared[pi, k] * b_shared[k, pj]
 
     if i < out_shape[-2] and j < out_shape[-1]:
         out_i = batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]

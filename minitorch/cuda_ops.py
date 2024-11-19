@@ -536,7 +536,7 @@ def _tensor_matrix_multiply(
         # out_index[0] = batch
         # out_index[1] = i
         # out_index[2] = j
-        out_i = index_to_position(out_index, out_strides)
+        # out_i = index_to_position(out_index, out_strides)
         out[out_i] = c
 
 

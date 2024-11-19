@@ -488,7 +488,7 @@ def _tensor_matrix_multiply(
     a_batch = batch if a_shape[0] > 1 else 0
     b_batch = batch if b_shape[0] > 1 else 0
 
-    num_tiles = (a_shape[-1] + BLOCK_DIM - 1) // BLOCK_DIM
+    num_tiles = (a_shape[-1] * BLOCK_DIM - 1) // BLOCK_DIM
     for m in range(num_tiles):
         # load date into a
         if i < a_shape[-2] and (m * BLOCK_DIM + pj) < a_shape[-1]:

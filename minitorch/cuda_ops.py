@@ -497,11 +497,6 @@ def _tensor_matrix_multiply(
             a_i = (
                 a_batch * a_batch_stride + i * a_strides[-2] + (m + pj) * a_strides[-1]
             )
-            # a_index = cuda.local.array(MAX_DIMS, numba.int32)
-            # a_index[0] = a_batch
-            # a_index[1] = i
-            # a_index[2] = m * BLOCK_DIM + pj
-            # a_i = index_to_position(a_index, a_strides)
 
             a_shared[pi, pj] = a_storage[a_i]
         else:
@@ -509,12 +504,9 @@ def _tensor_matrix_multiply(
 
         # load data into b
         if (m + pi) < b_shape[-2] and j < b_shape[-1]:
-            b_i = b_batch * b_batch_stride + j * b_strides[-1]
-            # b_index = cuda.local.array(MAX_DIMS, numba.int32)
-            # b_index[0] = b_batch
-            # b_index[1] = m * BLOCK_DIM + pi
-            # b_index[2] = j
-            # b_i = index_to_position(b_index, b_strides)
+            b_i = (
+                b_batch * b_batch_stride + (m + pi) * b_strides[-2] + j * b_strides[-1]
+            )
 
             b_shared[pi, pj] = b_storage[b_i]
         else:
@@ -528,11 +520,7 @@ def _tensor_matrix_multiply(
 
     if i < out_shape[-2] and j < out_shape[-1]:
         out_i = batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]
-        # out_index = cuda.local.array(MAX_DIMS, numba.int32)
-        # out_index[0] = batch
-        # out_index[1] = i
-        # out_index[2] = j
-        # out_i = index_to_position(out_index, out_strides)
+
         out[out_i] = c
 
 

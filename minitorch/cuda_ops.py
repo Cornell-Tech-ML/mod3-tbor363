@@ -499,8 +499,8 @@ def _tensor_matrix_multiply(
             )
 
             a_shared[pi, pj] = a_storage[a_i]
-        else:
-            a_shared[pi, pj] = 0
+        # else:
+        #     a_shared[pi, pj] = 0
 
         # load data into b
         if (m + pi) < b_shape[-2] and j < b_shape[-1]:
@@ -509,8 +509,8 @@ def _tensor_matrix_multiply(
             )
 
             b_shared[pi, pj] = b_storage[b_i]
-        else:
-            b_shared[pi, pj] = 0
+        # else:
+        #     b_shared[pi, pj] = 0
         cuda.syncthreads()
 
         # compute dot product for position c[i,j]

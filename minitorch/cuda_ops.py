@@ -29,11 +29,27 @@ FakeCUDAKernel = Any
 Fn = TypeVar("Fn")
 
 
-def device_jit(fn: Fn, **kwargs) -> Fn:
+def device_jit(fn: Fn, **kwargs: dict[str, Any]) -> Fn:
+    """Compiles a function for execution on a CUDA device using Numba's just-in-time compilation.
+
+    This function applies Numba's `jit` decorator with the `device=True` option, enabling the
+    provided function to run directly on a CUDA device. Additional keyword arguments can be
+    used to customize the compilation.
+
+    Args:
+    ----
+        fn: The function to compile for CUDA device execution.
+        **kwargs: Additional keyword arguments to customize the compilation.
+
+    Returns:
+    -------
+        The compiled function optimized for CUDA device execution.
+
+    """
     return _jit(device=True, **kwargs)(fn)  # type: ignore
 
 
-def jit(fn, **kwargs) -> FakeCUDAKernel:
+def jit(fn: Fn, **kwargs: dict[str, Any]) -> FakeCUDAKernel:
     """Just-in-time compiles a function for execution on CUDA hardware.
 
     This function applies a decorator to compile the given function for execution
@@ -444,7 +460,7 @@ def tensor_reduce(
 
 
 def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
-    r"""This is a practice square MM kernel to prepare for matmul.
+    r"""Practice square MM kernel to prepare for matmul.
 
     Given a storage `out` and two storage `a` and `b`. Where we know
     both are shape [size, size] with strides [size, 1].

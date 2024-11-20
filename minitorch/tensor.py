@@ -455,7 +455,7 @@ class Tensor:
 
         Args:
         ----
-            b : A tensor-like object to compare against this tensor. It
+            y : A tensor-like object to compare against this tensor. It
                 will be converted to a tensor if it is not already one.
 
         Returns:
@@ -553,7 +553,7 @@ class Tensor:
 
         Args:
         ----
-            *dims: The dimensions to permute. The order of dimensions specified
+            *order: The dimensions to permute. The order of dimensions specified
                 determines the new arrangement of the tensor's dimensions.
 
         Returns:
@@ -569,7 +569,7 @@ class Tensor:
 
         Args:
         ----
-            *dims: The desired dimensions for the reshaped tensor. The product
+            *shape: The desired dimensions for the reshaped tensor. The product
                 of these dimensions must equal the number of elements in the original
                 tensor.
 

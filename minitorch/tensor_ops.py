@@ -41,7 +41,21 @@ class TensorOps:
     @staticmethod
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
-    ) -> Callable[[Tensor, int], Tensor]: ...
+    ) -> Callable[[Tensor, int], Tensor]:
+        """Reduce placeholder
+
+        Args:
+        ----
+            fn : function to call on values.
+            start : start value for reduce.
+
+
+        Returns:
+        -------
+            A function to reduce tensors.
+
+        """
+        ...
 
     @staticmethod
     def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:
@@ -201,6 +215,7 @@ class SimpleOps(TensorOps):
         Args:
         ----
             fn: function from two floats-to-float to apply
+            start : start to reduce
             a (:class:`TensorData`): tensor to reduce over
             dim (int): int of dim to reduce
 

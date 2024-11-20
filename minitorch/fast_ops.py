@@ -30,6 +30,22 @@ Fn = TypeVar("Fn")
 
 
 def njit(fn: Fn, **kwargs: Any) -> Fn:
+    """Compiles a function using Numba's `njit` decorator with inline optimization.
+
+    This function applies a just-in-time compilation to the provided function using Numba,
+    optimizing it for performance. Additional keyword arguments can be passed to configure
+    the compilation behavior.
+
+    Args:
+    ----
+        fn: The function to compile for optimized execution.
+        **kwargs: Additional keyword arguments to customize the compilation.
+
+    Returns:
+    -------
+        The compiled function optimized for execution.
+
+    """
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
 
@@ -178,7 +194,6 @@ def tensor_map(
             for i in prange(len(out)):
                 out[i] = fn(in_storage[i])
         else:
-
             # run loop in parallel
             for i in prange(len(out)):
                 out_index: Index = np.zeros(MAX_DIMS, np.int32)
@@ -350,10 +365,8 @@ def _tensor_matrix_multiply(
 
     # get all the dims for the batch
     batch_dims = len(out_shape) - 2
-    m, k = a_shape[-2], a_shape[-1]
-    n = b_shape[-1]
+    k = a_shape[-1]
 
-    out_batches = np.prod(out_shape[:batch_dims])
     a_batches = np.prod(a_shape[:batch_dims])
     b_batches = np.prod(b_shape[:batch_dims])
 

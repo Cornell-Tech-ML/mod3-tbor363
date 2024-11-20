@@ -96,6 +96,18 @@ class Module:
         return None
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Invokes the forward method with the given arguments.
+
+        Args:
+        ----
+            *args: Positional arguments to pass to the forward method.
+            **kwargs: keyword arguments to pass to the forward method.
+
+        Returns:
+        -------
+            The result of the forward method.
+
+        """
         return self.forward(*args, **kwargs)
 
     def __repr__(self) -> str:

@@ -34,6 +34,22 @@ def device_jit(fn: Fn, **kwargs) -> Fn:
 
 
 def jit(fn, **kwargs) -> FakeCUDAKernel:
+    """Just-in-time compiles a function for execution on CUDA hardware.
+
+    This function applies a decorator to compile the given function for execution
+    on a CUDA device, enabling optimized performance. Additional keyword arguments
+    can be passed to customize the compilation behavior.
+
+    Args:
+    ----
+        fn: The function to compile for CUDA execution.
+        **kwargs: Additional keyword arguments to configure the JIT compilation.
+
+    Returns:
+    -------
+        A compiled CUDA kernel object that can be executed on a CUDA device.
+
+    """
     return _jit(**kwargs)(fn)  # type: ignore
 
 
@@ -67,6 +83,22 @@ class CudaOps(TensorOps):
 
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[[Tensor, Tensor], Tensor]:
+        """Creates a function to element-wise combine two tensors using a specified binary operation.
+
+        This function compiles a binary operation for CUDA execution and uses it to
+        define a new function that applies the operation element-wise on two input tensors.
+        The resulting tensor has a shape determined by broadcasting the input shapes.
+
+        Args:
+        ----
+            fn: A binary function that takes two scalar values and returns a scalar result.
+
+        Returns:
+        -------
+            A function that takes two tensors as input, applies the compiled binary operation
+            element-wise, and returns a new tensor.
+
+        """
         cufn: Callable[[float, float], float] = device_jit(fn)
         f = tensor_zip(cufn)
 
@@ -86,6 +118,23 @@ class CudaOps(TensorOps):
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[[Tensor, int], Tensor]:
+        """Creates a function to reduce a tensor along a specified dimension using a binary operation.
+
+        This function compiles a binary reduction operation for CUDA execution and uses it to
+        define a new function that reduces a tensor along a specified dimension. The reduction
+        begins with an optional starting value and iteratively applies the binary operation.
+
+        Args:
+        ----
+            fn: A binary function that takes two scalar values and returns a scalar result.
+            start: The initial value for the reduction operation. Defaults to 0.0.
+
+        Returns:
+        -------
+            A function that takes a tensor and a dimension as input, performs the reduction
+            operation along the specified dimension, and returns the resulting tensor.
+
+        """
         cufn: Callable[[float, float], float] = device_jit(fn)
         f = tensor_reduce(cufn)
 
@@ -107,6 +156,26 @@ class CudaOps(TensorOps):
 
     @staticmethod
     def matrix_multiply(a: Tensor, b: Tensor) -> Tensor:
+        """Performs matrix multiplication between two tensors.
+
+        This function computes the matrix product of two tensors, broadcasting them
+        if necessary. If the inputs are 2D tensors, they are temporarily reshaped into
+        3D tensors for the computation and reshaped back to 2D afterward.
+
+        The last two dimensions of the input tensors must be compatible for matrix multiplication,
+        i.e., the number of columns in the first tensor must equal the number of rows in the second tensor.
+
+        Args:
+        ----
+            a: The first tensor for matrix multiplication.
+            b: The second tensor for matrix multiplication.
+
+        Returns:
+        -------
+            A tensor containing the result of the matrix multiplication. The shape of the output tensor
+            depends on the shapes of the input tensors and any necessary broadcasting.
+
+        """
         # Make these always be a 3 dimensional multiply
         both_2d = 0
         if len(a.shape) == 2:
@@ -237,7 +306,7 @@ def tensor_zip(
 
 
 def _sum_practice(out: Storage, a: Storage, size: int) -> None:
-    """This is a practice sum kernel to prepare for reduce.
+    r"""Practice sum kernel to prepare for reduce.
 
     Given an array of length $n$ and out of size $n // \text{blockDIM}$
     it should sum up each blockDim values into an out cell.
@@ -290,6 +359,20 @@ jit_sum_practice = cuda.jit()(_sum_practice)
 
 
 def sum_practice(a: Tensor) -> TensorData:
+    """Computes a partial sum of a tensor using CUDA parallelization.
+
+    This function calculates a sum over the elements of the input tensor by dividing the work
+    into CUDA blocks and threads. The result is stored in a TensorData object on the device.
+
+    Args:
+    ----
+        a: The input tensor to be summed.
+
+    Returns:
+    -------
+        A TensorData object containing the partial sums computed by the CUDA kernel.
+
+    """
     (size,) = a.shape
     threadsperblock = THREADS_PER_BLOCK
     blockspergrid = (size // THREADS_PER_BLOCK) + 1
@@ -361,7 +444,7 @@ def tensor_reduce(
 
 
 def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
-    """This is a practice square MM kernel to prepare for matmul.
+    r"""This is a practice square MM kernel to prepare for matmul.
 
     Given a storage `out` and two storage `a` and `b`. Where we know
     both are shape [size, size] with strides [size, 1].
@@ -421,6 +504,21 @@ jit_mm_practice = jit(_mm_practice)
 
 
 def mm_practice(a: Tensor, b: Tensor) -> TensorData:
+    """Computes the matrix multiplication of two tensors using CUDA parallelization.
+
+    This function performs a matrix multiplication between two input tensors, leveraging CUDA
+    for parallel computation. The resulting matrix is stored in a TensorData object on the device.
+
+    Args:
+    ----
+        a: The first input tensor for the matrix multiplication.
+        b: The second input tensor for the matrix multiplication.
+
+    Returns:
+    -------
+        A TensorData object containing the result of the matrix multiplication.
+
+    """
     (size, _) = a.shape
     threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK)
     blockspergrid = 1
@@ -491,7 +589,6 @@ def _tensor_matrix_multiply(
     # num_tiles = (a_shape[-1] * BLOCK_DIM) // BLOCK_DIM
     # num_tiles =
     for m in range(0, a_shape[-1], BLOCK_DIM):
-
         # load date into a
         if i < a_shape[-2] and (m + pj) < a_shape[-1]:
             a_i = (

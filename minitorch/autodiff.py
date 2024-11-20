@@ -37,19 +37,73 @@ variable_count = 1
 
 
 class Variable(Protocol):
-    def accumulate_derivative(self, x: Any) -> None: ...
+    def accumulate_derivative(self, x: Any) -> None:
+        """Add `val` to the the derivative accumulated on this variable.
+        Should only be called during autodifferentiation on leaf variables.
+
+        Args:
+        ----
+            x: value to be accumulated
+
+        """
+        ...
 
     @property
-    def unique_id(self) -> int: ...
+    def unique_id(self) -> int:
+        """Returns the unique id of this variable.
 
-    def is_leaf(self) -> bool: ...
+        Returns
+        -------
+        Integer value of the Variable's unique id.
 
-    def is_constant(self) -> bool: ...
+        """
+        ...
+
+    def is_leaf(self) -> bool:
+        """True if this variable created by the user (no `last_fn`)
+
+        Returns
+        -------
+        If the variable is a leaf.
+
+        """
+        ...
+
+    def is_constant(self) -> bool:
+        """True if this variable has no history.
+
+        Returns
+        -------
+        If the variable is a constant.
+
+        """
+        ...
 
     @property
-    def parents(self) -> Iterable["Variable"]: ...
+    def parents(self) -> Iterable["Variable"]:
+        """Gets all of the parents of the input variable.
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: ...
+        Returns
+        -------
+        All of the current variable's parents.
+        `
+
+        """
+        ...
+
+    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+        """Computes the chain rule for backpropagation through the computationg graph.
+
+        Args:
+        ----
+        d_output: the input derivative value
+        Returns:
+        A list of tuples, where each tuple contians:
+            - Variable: the input variable for which the derivative is computed.
+            - Any: the derivative of the output with respect to the input variable `
+
+        """
+        ...
 
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
@@ -87,10 +141,8 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     Args:
     ----
-        variable: The right-most variable
-        deriv  : Its derivative that we want to propagate backward to the leaves.
-
-    No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
+        variable: The right-most variable.
+        deriv: Its derivative that we want to propagate backward to the leaves.
 
     """
     queue = topological_sort(variable)
@@ -123,4 +175,15 @@ class Context:
 
     @property
     def saved_tensors(self) -> Tuple[Any, ...]:
+        """Retrieves the saved tensors associated with the current object.
+
+        This property returns a tuple containing the saved tensor values, which
+        may be used for backward computations or other purposes within the
+        context of the object's operations.
+
+        Returns
+        -------
+            A tuple of saved tensor values.
+
+        """
         return self.saved_values
